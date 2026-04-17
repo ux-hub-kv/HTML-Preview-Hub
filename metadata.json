@@ -1,0 +1,6 @@
+{
+  "name": "HTML Preview Hub",
+  "description": "Internal web app to upload, preview, and share HTML files instantly in a sandboxed environment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
