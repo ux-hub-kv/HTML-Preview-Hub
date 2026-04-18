@@ -69,8 +69,8 @@ export default function PreviewViewPage() {
     const days = differenceInDays(exp, now);
     const hours = differenceInHours(exp, now);
     if (hours <= 0) return null;
-    if (days < 1) return `${hours}h còn lại`;
-    return `${days} ngày còn lại`;
+    if (days < 1) return `File sẽ được lưu trữ trong ${hours}h`;
+    return `File sẽ được lưu trữ trong ${days} ngày`;
   };
 
   if (loading) {
@@ -106,20 +106,20 @@ export default function PreviewViewPage() {
             {preview.title}
           </h1>
           <div className="flex flex-wrap items-center gap-8 mt-6">
-            <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
+            {/* <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
               <span className="text-bold-muted">ID:</span>
               <span>{preview.id.split('-')[0]}</span>
             </div>
             <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
               <span className="text-bold-muted">AUTHOR:</span>
               <span>{preview.author || 'ANON'}</span>
-            </div>
+            </div> */}
             <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
               <span className="text-bold-muted">UPDATED:</span>
               <span>{formatDate(preview.updated_at)}</span>
             </div>
             {getExpiryText(preview.expires_at) && (
-              <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase text-red-500">
+              <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
                 <Clock size={12} />
                 <span>{getExpiryText(preview.expires_at)}</span>
               </div>
@@ -131,7 +131,7 @@ export default function PreviewViewPage() {
           <button
             onClick={handleShare}
             disabled={copied}
-            className="flex items-center gap-2 border-2 border-bold-border bg-surface px-6 py-3 text-xs font-black uppercase tracking-wider text-ink transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex items-center gap-2 border-2 border-bold-border bg-surface px-6 py-3 text-xs font-black uppercase tracking-wider text-ink transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
           >
             {copied ? <Check size={16} /> : <Share2 size={16} />}
             {copied ? 'Đã copy' : 'Copy Link'}
@@ -141,11 +141,11 @@ export default function PreviewViewPage() {
             className="flex items-center gap-2 border-2 border-bold-border bg-ink px-6 py-3 text-xs font-black uppercase tracking-wider text-surface transition-transform hover:scale-105 active:scale-95"
           >
             <RefreshCcw size={16} />
-            Replace Content
+            Cập nhật file mới
           </Link>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-2 border-2 border-red-500 bg-surface px-6 py-3 text-xs font-black uppercase tracking-wider text-red-500 transition-transform hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 border-2 border-red-500 bg-surface px-6 py-3 text-xs font-black uppercase tracking-wider text-red-500 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
           >
             <Trash2 size={16} />
             Xóa

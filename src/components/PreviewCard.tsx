@@ -21,7 +21,7 @@ export default function PreviewCard({ preview, onDelete }: { preview: HtmlPrevie
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <div className="group relative flex flex-col border-2 border-bold-border bg-surface p-6 transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] cursor-pointer">
+    <div className="group relative flex flex-col border-2 border-bold-border bg-surface p-4 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] cursor-pointer">
       <Link to={`/preview/${preview.id}`} className="absolute inset-0 z-0" aria-label={`View ${preview.title}`} />
 
       {confirmDelete && (
@@ -31,13 +31,13 @@ export default function PreviewCard({ preview, onDelete }: { preview: HtmlPrevie
           <div className="flex gap-3">
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-              className="border-2 border-bold-border px-4 py-2 text-xs font-black uppercase tracking-wider hover:bg-gray-100"
+              className="border-2 border-bold-border px-4 py-2 text-xs font-black uppercase tracking-wider hover:bg-gray-100 cursor-pointer"
             >
               Hủy
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete?.(preview.id); }}
-              className="border-2 border-red-500 bg-red-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-red-600"
+              className="border-2 border-red-500 bg-red-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-red-600 cursor-pointer"
             >
               Xóa
             </button>
@@ -45,7 +45,7 @@ export default function PreviewCard({ preview, onDelete }: { preview: HtmlPrevie
         </div>
       )}
 
-      <div className="mb-6 flex flex-1 flex-col">
+      <div className="mb-4 flex flex-1 flex-col">
         <div className="mb-2 flex items-center justify-between">
           <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-bold-muted">
             HTML Snippet
@@ -59,17 +59,13 @@ export default function PreviewCard({ preview, onDelete }: { preview: HtmlPrevie
             </div>
           </div>
         </div>
-        <h3 className="line-clamp-1 text-xl font-black uppercase tracking-tight text-ink group-hover:text-bold-accent">
+        <h3 className="line-clamp-1 text-lg font-black uppercase tracking-tight text-ink group-hover:text-bold-accent">
           {preview.title}
         </h3>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-6">
+      <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-4">
         <div className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wider text-ink">
-          <div className="flex items-center gap-1.5">
-            <span className="text-bold-muted">AUTH:</span>
-            <span className="truncate max-w-[80px]">{preview.author || 'ANON'}</span>
-          </div>
           <div className="flex items-center gap-1.5">
              <span className="text-bold-muted">DATE:</span>
             <span>{formatDate(preview.updated_at)}</span>
@@ -79,7 +75,7 @@ export default function PreviewCard({ preview, onDelete }: { preview: HtmlPrevie
         {onDelete && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDelete(true); }}
-            className="relative z-10 p-1.5 text-bold-muted transition-colors hover:text-red-500"
+            className="relative z-10 p-1.5 text-bold-muted transition-colors hover:text-red-500 cursor-pointer"
             title="Xóa preview"
           >
             <Trash2 size={14} />
