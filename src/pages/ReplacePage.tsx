@@ -23,6 +23,8 @@ export default function ReplacePage() {
 
       if (error) {
         setError('PREVIEW_NOT_FOUND');
+      } else if (data.deleted_at) {
+        setError('File này đã bị xóa.');
       } else {
         setPreview(data);
       }

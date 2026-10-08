@@ -2,14 +2,19 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, RefreshCcw, Share2, Loader2, AlertCircle, Check, Clock, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { HtmlPreview } from '../types';
+import { Folder, HtmlPreview } from '../types';
 import IframePreview from '../components/IframePreview';
+import Breadcrumb, { folderUrl } from '../components/Breadcrumb';
+import { fetchFolders, getFolderPath } from '../lib/folders';
 import { formatDate } from '../lib/utils';
-import { differenceInDays, differenceInHours } from 'date-fns';
+import { EXPIRY_ENABLED, TRASH_RETENTION_DAYS } from '../lib/config';
+import { useTrashPreview } from '../lib/useTrashPreview';
+import { addDays, differenceInDays, differenceInHours } from 'date-fns';
 
 export default function PreviewViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const trashPreview = useTrashPreview();
   const [preview, setPreview] = useState<HtmlPreview | null>(null);
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,6 +22,8 @@ export default function PreviewViewPage() {
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [folderPath, setFolderPath] = useState<Folder[]>([]);
 
   useEffect(() => {
     async function fetchPreview() {
@@ -42,6 +49,12 @@ export default function PreviewViewPage() {
 
       setPublicUrl(storageData.publicUrl);
       setLoading(false);
+
+      if (data.folder_id) {
+        fetchFolders()
+          .then((folders) => setFolderPath(getFolderPath(folders, data.folder_id)))
+          .catch(() => setFolderPath([]));
+      }
     }
 
     fetchPreview();
@@ -50,9 +63,13 @@ export default function PreviewViewPage() {
   const handleDelete = async () => {
     if (!preview) return;
     setDeleting(true);
-    await supabase.storage.from('previews').remove([preview.file_path]);
-    await supabase.from('html_previews').delete().eq('id', preview.id);
-    navigate('/');
+    try {
+      await trashPreview(preview);
+      navigate(folderUrl(preview.folder_id ?? null));
+    } catch {
+      setDeleting(false);
+      setDeleteError('Không xóa được file, vui lòng thử lại.');
+    }
   };
 
   const handleShare = () => {
@@ -63,7 +80,7 @@ export default function PreviewViewPage() {
   };
 
   const getExpiryText = (expiresAt: string | null) => {
-    if (!expiresAt) return null;
+    if (!EXPIRY_ENABLED || !expiresAt) return null;
     const now = new Date();
     const exp = new Date(expiresAt);
     const days = differenceInDays(exp, now);
@@ -77,6 +94,26 @@ export default function PreviewViewPage() {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <Loader2 className="animate-spin text-ink" size={48} />
+      </div>
+    );
+  }
+
+  if (preview?.deleted_at) {
+    const deletedAt = new Date(preview.deleted_at);
+    const purgeAt = addDays(deletedAt, TRASH_RETENTION_DAYS);
+    return (
+      <div className="mx-auto max-w-xl px-6 py-20 text-center">
+        <Trash2 size={48} className="mx-auto mb-4 text-bold-muted" />
+        <h1 className="text-2xl font-black uppercase text-ink">File đã bị xóa</h1>
+        <p className="mt-3 font-mono text-xs text-bold-muted">
+          <span className="font-bold text-ink">{preview.title}</span> đã bị xóa ngày {formatDate(deletedAt)}
+          {' '}và sẽ bị xóa vĩnh viễn sau ngày {formatDate(purgeAt)}.
+          <br />
+          Liên hệ quản trị viên nếu cần khôi phục.
+        </p>
+        <Link to="/" className="mt-8 inline-block font-black uppercase text-ink underline underline-offset-4">
+          Về trang chủ
+        </Link>
       </div>
     );
   }
@@ -98,10 +135,16 @@ export default function PreviewViewPage() {
     <div className="flex flex-col min-h-screen">
       <header className="flex flex-col gap-6 border-b-2 border-bold-border bg-surface px-10 py-12 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col gap-2">
-          <Link to="/" className="mb-4 inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest text-bold-muted hover:text-ink">
-            <ArrowLeft size={14} />
-            Back_to_System
-          </Link>
+          <div className="mb-4 flex items-center gap-2">
+            <Link
+              to={folderUrl(preview.folder_id ?? null)}
+              aria-label="Quay lại folder"
+              className="flex h-7 w-7 items-center justify-center border-2 border-bold-border text-ink hover:bg-ink hover:text-surface"
+            >
+              <ArrowLeft size={14} />
+            </Link>
+            <Breadcrumb path={folderPath} lastIsCurrent={false} />
+          </div>
           <h1 className="text-6xl font-black uppercase leading-[0.85] tracking-tighter text-ink">
             {preview.title}
           </h1>
@@ -165,10 +208,13 @@ export default function PreviewViewPage() {
             <div className="flex flex-col gap-2">
               <h2 className="text-2xl font-black uppercase tracking-tight text-ink">Xóa Preview?</h2>
               <p className="font-mono text-xs text-bold-muted">
-                <span className="font-bold text-ink">{preview.title}</span> sẽ bị xóa vĩnh viễn.
-                <br />Hành động này không thể hoàn tác.
+                <span className="font-bold text-ink">{preview.title}</span> sẽ bị xóa khỏi danh sách.
+                <br />File được giữ thêm {TRASH_RETENTION_DAYS} ngày trước khi xóa vĩnh viễn.
               </p>
             </div>
+            {deleteError && (
+              <p role="alert" className="font-mono text-[11px] font-bold uppercase text-red-600">{deleteError}</p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, FileCode, X, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { EXPIRY_ENABLED } from '../lib/config';
 
 const AUTHOR_STORAGE_KEY = 'html-preview-hub-author';
 
@@ -23,7 +24,7 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
     title: initialData?.title || '',
     author: initialData?.author || localStorage.getItem(AUTHOR_STORAGE_KEY) || '',
   });
-  const [expiryDays, setExpiryDays] = useState<14 | 60 | null>(14);
+  const [expiryDays, setExpiryDays] = useState<14 | 60 | null>(EXPIRY_ENABLED ? 14 : null);
 
   const handleFile = (selectedFile: File) => {
     if (selectedFile.type !== 'text/html' && !selectedFile.name.endsWith('.html')) {
@@ -191,7 +192,7 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
         </div>
       </div>
 
-      {!isReplacing && (
+      {!isReplacing && EXPIRY_ENABLED && (
         <div>
           <label className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-bold-muted mb-3">
             Auto_Delete_After
