@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { friendlyError } from '../lib/folders';
+import { cn } from '../lib/utils';
 
 /** Inline name editor: Enter / blur saves, Escape cancels. Keeps editing open when the save fails. */
 export default function FolderNameInput({
@@ -27,7 +27,7 @@ export default function FolderNameInput({
     if (busy.current) return;
     const name = value.trim();
     if (!name) {
-      setError('Tên folder không được để trống');
+      setError('Hãy nhập tên folder');
       return;
     }
     busy.current = true;
@@ -44,7 +44,7 @@ export default function FolderNameInput({
   };
 
   return (
-    <div className="relative z-10 flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+    <div className="relative z-10 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
@@ -59,14 +59,14 @@ export default function FolderNameInput({
           onBlur={() => { if (!error) submit(); }}
           aria-label="Tên folder"
           aria-invalid={!!error}
-          className="min-w-0 flex-1 border-2 border-bold-border bg-surface px-2 py-1 text-sm font-black uppercase tracking-tight focus:outline-none disabled:opacity-60"
+          className={cn('input input-sm w-full min-w-0 flex-1', error && 'input-error')}
         />
-        {saving && <Loader2 size={14} className="shrink-0 animate-spin" />}
+        {saving && <span className="loading loading-spinner loading-xs shrink-0" />}
       </div>
       {error ? (
-        <p role="alert" className="font-mono text-[10px] font-bold uppercase text-red-600">{error}</p>
+        <p role="alert" className="text-xs text-error">{error}</p>
       ) : (
-        <p className="font-mono text-[9px] font-bold uppercase text-bold-muted">Enter để lưu · Esc để hủy</p>
+        <p className="text-[11px] text-base-content/50">Enter để lưu · Esc để hủy</p>
       )}
     </div>
   );

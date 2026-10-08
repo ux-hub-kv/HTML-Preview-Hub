@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, Loader2, Upload, AlertCircle, FolderPlus, X } from 'lucide-react';
+import { Search, Upload, AlertCircle, FolderPlus, FolderOpen, FileCode2, X } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { DragItem, Folder, HtmlPreview } from '../types';
@@ -110,11 +110,11 @@ export default function BrowsePage() {
 
   const handleUpload = async (file: File) => {
     if (file.type !== 'text/html' && !file.name.endsWith('.html')) {
-      setError('PLEASE_UPLOAD_VALID_HTML');
+      setError('Chỉ hỗ trợ file .html. Hãy chọn file khác.');
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setError('FILE_EXCEEDS_2MB_LIMIT');
+      setError('File lớn hơn 2MB. Hãy chọn file nhỏ hơn.');
       return;
     }
     setError(null);
@@ -149,7 +149,7 @@ export default function BrowsePage() {
 
       navigate(`/preview/${dbData.id}`);
     } catch (err: any) {
-      setError(err.message || 'SYSTEM_ERROR_OCCURRED');
+      setError(err.message || 'Đã có lỗi xảy ra. Hãy thử lại.');
       setUploading(false);
     }
   };
@@ -256,29 +256,31 @@ export default function BrowsePage() {
 
   if (!loading && currentFolderId && !currentFolder) {
     return (
-      <div className="mx-auto max-w-xl py-20 text-center">
-        <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
-        <h1 className="text-2xl font-black uppercase text-ink">Folder không tồn tại</h1>
-        <p className="mt-2 font-mono text-xs text-bold-muted">Folder có thể đã bị xóa hoặc link không đúng.</p>
-        <Link to="/" className="mt-8 inline-block font-black uppercase text-ink underline underline-offset-4">
-          Về trang chủ
-        </Link>
+      <div className="mx-auto max-w-md px-4 py-24 text-center">
+        <AlertCircle size={40} className="mx-auto mb-4 text-error" />
+        <h1 className="text-xl font-semibold">Không tìm thấy folder</h1>
+        <p className="mt-2 text-sm text-base-content/60">Folder có thể đã bị xóa hoặc link không đúng.</p>
+        <Link to="/" className="btn btn-primary btn-sm mt-6">Về trang chủ</Link>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="border-b-2 border-bold-border bg-surface px-10 py-10">
-        <h1 className="text-5xl font-black uppercase leading-[0.9] tracking-tighter text-ink">
-          HTML Previews
-        </h1>
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
+      <header className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-content">
+          <FileCode2 size={20} />
+        </div>
+        <div>
+          <h1 className="text-xl font-semibold leading-tight">HTML Preview Hub</h1>
+          <p className="text-sm text-base-content/60">Chia sẻ và xem nhanh các file HTML</p>
+        </div>
       </header>
 
-      <div className="flex min-h-[62px] flex-wrap items-center border-b-2 border-bold-border bg-surface px-10 py-4">
+      <div className="flex min-h-9 flex-wrap items-center">
         {searching ? (
-          <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink">
-            Kết quả tìm kiếm cho "{search.trim()}" trong toàn bộ folder
+          <p className="text-sm text-base-content/70">
+            Kết quả tìm kiếm cho <span className="font-medium text-base-content">"{search.trim()}"</span> trong tất cả folder
           </p>
         ) : (
           <Breadcrumb path={path} canDropOn={canDropOn} onDropOn={dropOn} />
@@ -286,129 +288,114 @@ export default function BrowsePage() {
       </div>
 
       {!searching && (
-        <div className="p-10 pb-0">
-          <div
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            className={cn(
-              'group relative flex h-[240px] flex-col items-center justify-center border-2 border-dashed border-bold-border transition-all mb-8 bg-surface hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] cursor-pointer',
-              dragActive
-                ? 'border-solid border-ink bg-gray-50'
-                : ''
-            )}
-          >
-            <input
-              type="file"
-              accept=".html"
-              onChange={(e) => e.target.files && handleUpload(e.target.files[0])}
-              className="absolute inset-0 z-10 cursor-pointer opacity-0"
-              disabled={uploading}
-            />
-            {uploading ? (
-              <div className="flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
-                 <Loader2 className="animate-spin text-ink mb-3" size={32} />
-                 <p className="text-sm font-black uppercase tracking-widest text-ink">Uploading...</p>
+        <div
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          className={cn(
+            'relative flex h-44 flex-col items-center justify-center rounded-box border-2 border-dashed bg-base-100 transition-colors',
+            dragActive ? 'border-primary bg-primary/5' : 'border-base-content/20 hover:border-primary/60'
+          )}
+        >
+          <input
+            type="file"
+            accept=".html"
+            onChange={(e) => e.target.files && handleUpload(e.target.files[0])}
+            className="absolute inset-0 z-10 cursor-pointer opacity-0"
+            disabled={uploading}
+            aria-label="Chọn file HTML để tải lên"
+          />
+          {uploading ? (
+            <div className="flex flex-col items-center gap-3 text-center">
+              <span className="loading loading-spinner loading-md text-primary" />
+              <p className="text-sm font-medium">Đang tải lên…</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Upload size={20} />
               </div>
-            ) : (
-               <div className="flex flex-col items-center text-center mt-2">
-                <div className="mb-4 border-2 border-bold-border p-3 text-ink bg-white">
-                  <Upload size={24} />
-                </div>
-                <p className="text-sm font-black uppercase tracking-widest text-ink">
-                  Drag_drop_source_file or Click to Upload
-                </p>
-                <p className="mt-2 font-mono text-[10px] font-bold uppercase text-bold-muted">
-                  {currentFolder ? `Upload vào folder: ${currentFolder.name}` : 'Upload vào: Home'} | .HTML ONLY | SIZE_LIMIT: 2MB
-                </p>
-              </div>
-            )}
-          </div>
+              <p className="text-sm font-medium">
+                Kéo thả file vào đây hoặc <span className="text-primary">chọn file</span>
+              </p>
+              <p className="mt-1 text-xs text-base-content/60">
+                Tải vào {currentFolder ? `folder "${currentFolder.name}"` : 'Home'} · Chỉ file .html, tối đa 2MB
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      <div className={cn('px-10', searching && 'pt-10')}>
-        {/* Toolbar for the listing below: search across all folders + create a folder here */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-bold-muted" size={16} />
-            <input
-              type="text"
-              placeholder="Tìm file hoặc folder"
-              aria-label="Tìm file hoặc folder"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
-              className="w-full border-2 border-bold-border bg-surface py-3 pl-10 pr-9 text-xs font-bold uppercase tracking-wider focus:outline-none"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                aria-label="Xóa tìm kiếm"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-bold-muted hover:text-ink cursor-pointer"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-          {!searching && !foldersUnavailable && (
-            <button
-              type="button"
-              onClick={() => setCreatingFolder(true)}
-              disabled={creatingFolder}
-              className="flex items-center gap-2 border-2 border-bold-border bg-surface px-4 py-3 text-xs font-black uppercase tracking-wider text-ink transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
-            >
-              <FolderPlus size={14} />
-              Folder mới
-            </button>
-          )}
-        </div>
-
-        {foldersUnavailable && (
-          <div className="mb-8 flex items-center gap-3 border-2 border-amber-500 bg-amber-50 p-6 font-mono text-xs font-bold uppercase text-amber-800">
-            <AlertCircle size={20} />
-            <span>Chưa bật tính năng folder: hãy chạy SQL ở phần A trong SUPABASE_SETUP.md.</span>
-          </div>
-        )}
-        {error && (
-          <div role="alert" className="mb-8 flex items-center gap-3 border-2 border-red-600 bg-red-50 p-6 font-mono text-xs font-bold uppercase text-red-600">
-            <AlertCircle size={20} />
-            <span className="flex-1">Error_Code: {error}</span>
-            <button type="button" onClick={() => setError(null)} aria-label="Đóng" className="cursor-pointer">
-              <X size={16} />
-            </button>
-          </div>
+      {/* Toolbar for the listing below: search across all folders + create a folder here */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <label className="input w-full sm:w-80">
+          <Search size={16} className="text-base-content/50" />
+          <input
+            type="search"
+            placeholder="Tìm file hoặc folder"
+            aria-label="Tìm file hoặc folder"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
+          />
+        </label>
+        {!searching && !foldersUnavailable && (
+          <button
+            type="button"
+            onClick={() => setCreatingFolder(true)}
+            disabled={creatingFolder}
+            className="btn btn-primary"
+          >
+            <FolderPlus size={16} />
+            Folder mới
+          </button>
         )}
       </div>
 
-      <div className="px-10 pb-10">
+      {foldersUnavailable && (
+        <div role="alert" className="alert alert-warning alert-soft text-base-content">
+          <AlertCircle size={18} />
+          <span>Tính năng folder chưa được bật. Hãy chạy SQL ở phần A trong SUPABASE_SETUP.md.</span>
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="alert alert-error alert-soft">
+          <AlertCircle size={18} />
+          <span className="flex-1">{error}</span>
+          <button type="button" onClick={() => setError(null)} aria-label="Đóng" className="btn btn-ghost btn-circle btn-xs">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      <div className="pb-10">
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="animate-spin text-ink" size={32} />
+          <div className="flex h-48 items-center justify-center">
+            <span className="loading loading-spinner loading-lg text-primary" />
           </div>
         ) : shownFolders.length === 0 && shownPreviews.length === 0 && !creatingFolder ? (
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-bold-border bg-white py-24 text-center">
-            <h3 className="text-xl font-black uppercase text-ink">
-              {searching ? 'Không tìm thấy' : currentFolder ? 'Folder trống' : 'List Empty'}
+          <div className="flex flex-col items-center justify-center rounded-box border border-dashed border-base-300 bg-base-100 px-6 py-16 text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-base-200 text-base-content/50">
+              {searching ? <Search size={20} /> : <FolderOpen size={20} />}
+            </div>
+            <h3 className="font-semibold">
+              {searching ? 'Không tìm thấy kết quả' : currentFolder ? 'Folder này đang trống' : 'Chưa có file nào'}
             </h3>
-            <p className="mt-1 font-mono text-xs font-bold uppercase text-bold-muted">
+            <p className="mt-1 text-sm text-base-content/60">
               {searching
-                ? 'Không có file hay folder nào khớp.'
+                ? 'Thử tìm bằng từ khóa khác.'
                 : currentFolder
-                  ? 'Upload file ở trên, hoặc dùng "Di chuyển tới…" để đưa file vào đây.'
-                  : 'Chưa có file nào được tải lên.'}
+                  ? 'Tải file lên ở trên, hoặc dùng "Di chuyển tới…" để đưa file vào đây.'
+                  : 'Tải file HTML đầu tiên lên ở khung phía trên.'}
             </p>
           </div>
         ) : (
-          <>
+          <div className="flex flex-col gap-8">
             {(shownFolders.length > 0 || creatingFolder) && (
-              <section className="mb-10">
-                <h2 className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-bold-muted">
-                  Folder
-                </h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <section>
+                <h2 className="mb-3 text-sm font-semibold text-base-content/60">Folder</h2>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {creatingFolder && (
                     <NewFolderCard onSubmit={handleCreateFolder} onCancel={() => setCreatingFolder(false)} />
                   )}
@@ -438,10 +425,8 @@ export default function BrowsePage() {
 
             {shownPreviews.length > 0 && (
               <section>
-                <h2 className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-bold-muted">
-                  Các file đã tải lên
-                </h2>
-                <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                <h2 className="mb-3 text-sm font-semibold text-base-content/60">File</h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {shownPreviews.map((preview) => (
                     <PreviewCard
                       key={preview.id}
@@ -457,7 +442,7 @@ export default function BrowsePage() {
                 </div>
               </section>
             )}
-          </>
+          </div>
         )}
       </div>
 

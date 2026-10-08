@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Folder as FolderIcon, Home, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Folder as FolderIcon, Home, AlertCircle } from 'lucide-react';
 import { DragItem, Folder } from '../types';
 import { friendlyError, getFolderPath, getSubtreeIds, hasNameConflict } from '../lib/folders';
 import { cn } from '../lib/utils';
@@ -76,9 +76,9 @@ export default function MoveDialog({ item, itemName, currentParentId, folders, o
       <li key={id ?? 'root'}>
         <div
           className={cn(
-            'flex items-center gap-1 border-2 py-1.5 pr-3',
-            isSelected ? 'border-ink bg-ink text-surface' : 'border-transparent',
-            !isSelected && !isBlocked && 'hover:bg-gray-100',
+            'flex items-center gap-1 rounded-field border py-1.5 pr-3',
+            isSelected ? 'border-primary bg-primary/10 text-primary' : 'border-transparent',
+            !isSelected && !isBlocked && 'hover:bg-base-200',
             isBlocked && 'opacity-40'
           )}
           style={{ paddingLeft: 8 + depth * 18 }}
@@ -88,7 +88,7 @@ export default function MoveDialog({ item, itemName, currentParentId, folders, o
               type="button"
               onClick={() => toggle(id!)}
               aria-label={isOpen ? `Thu gọn ${name}` : `Mở rộng ${name}`}
-              className="flex h-5 w-5 shrink-0 items-center justify-center cursor-pointer"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-base-content/60 hover:bg-base-300 cursor-pointer"
             >
               {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
@@ -100,13 +100,13 @@ export default function MoveDialog({ item, itemName, currentParentId, folders, o
             disabled={isBlocked}
             onClick={() => { setSelected(id); setError(null); }}
             onDoubleClick={() => hasChildren && toggle(id!)}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left text-xs font-black uppercase tracking-wider cursor-pointer disabled:cursor-not-allowed"
+            className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm cursor-pointer disabled:cursor-not-allowed"
           >
             {id === null ? <Home size={14} className="shrink-0" /> : <FolderIcon size={14} className="shrink-0" />}
             <span className="truncate">{name}</span>
             {isCurrent && (
-              <span className={cn('ml-auto shrink-0 font-mono text-[9px] font-bold', isSelected ? 'text-surface/70' : 'text-bold-muted')}>
-                VỊ TRÍ HIỆN TẠI
+              <span className="badge badge-ghost badge-sm ml-auto shrink-0">
+                Vị trí hiện tại
               </span>
             )}
           </button>
@@ -120,27 +120,27 @@ export default function MoveDialog({ item, itemName, currentParentId, folders, o
 
   return (
     <Modal title="Di chuyển tới…" onClose={onClose}>
-      <p className="-mt-3 font-mono text-xs text-bold-muted">
-        Chọn nơi chuyển <span className="font-bold text-ink">{itemName}</span> tới.
+      <p className="-mt-2 text-sm text-base-content/70">
+        Chọn nơi chuyển <span className="font-semibold text-base-content">{itemName}</span> tới.
       </p>
 
-      <ul className="flex-[1_1_240px] min-h-[120px] overflow-y-auto border-2 border-bold-border p-1">
+      <ul className="flex-[1_1_240px] min-h-[120px] overflow-y-auto rounded-box border border-base-300 p-1">
         {renderRow(null, 'Home', 0)}
       </ul>
 
       {error && (
-        <div role="alert" className="flex items-center gap-2 border-2 border-red-600 bg-red-50 p-3 font-mono text-[11px] font-bold uppercase text-red-600">
+        <div role="alert" className="alert alert-error alert-soft py-2 text-sm">
           <AlertCircle size={14} className="shrink-0" />
           {error}
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="modal-action mt-0">
         <button
           type="button"
           onClick={onClose}
           disabled={saving}
-          className="flex-1 border-2 border-bold-border py-3 text-xs font-black uppercase tracking-wider hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
+          className="btn btn-ghost"
         >
           Hủy
         </button>
@@ -148,9 +148,9 @@ export default function MoveDialog({ item, itemName, currentParentId, folders, o
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className="flex flex-1 items-center justify-center gap-2 border-2 border-bold-border bg-ink py-3 text-xs font-black uppercase tracking-wider text-surface hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="btn btn-primary"
         >
-          {saving && <Loader2 size={14} className="animate-spin" />}
+          {saving && <span className="loading loading-spinner loading-xs" />}
           Di chuyển
         </button>
       </div>

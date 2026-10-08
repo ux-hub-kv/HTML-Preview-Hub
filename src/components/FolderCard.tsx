@@ -56,27 +56,28 @@ export default function FolderCard({
       onDragEnd={onDragEnd}
       {...dropHandlers}
       className={cn(
-        'group relative flex items-center gap-3 border-2 border-bold-border bg-surface p-4 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)]',
+        'group relative flex items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 transition-all hover:border-primary/40 hover:shadow-md',
         isDragging && 'opacity-40',
-        isOver && 'border-bold-accent bg-blue-50 -translate-y-1 shadow-[4px_4px_0px_rgba(0,85,255,1)]'
+        isOver && 'border-primary bg-primary/5 ring-2 ring-primary/30'
       )}
     >
       {!editing && (
         <Link
           to={`/folder/${folder.id}`}
           draggable={false}
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 z-0 rounded-box"
           aria-label={`Mở folder ${folder.name}`}
         />
       )}
 
-      <FolderIcon
-        size={28}
-        strokeWidth={2.25}
-        className={cn('shrink-0', isOver ? 'text-bold-accent' : 'text-ink')}
-        fill={isOver ? 'currentColor' : 'none'}
-        fillOpacity={0.15}
-      />
+      <div
+        className={cn(
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-field transition-colors',
+          isOver ? 'bg-primary text-primary-content' : 'bg-primary/10 text-primary'
+        )}
+      >
+        <FolderIcon size={20} />
+      </div>
 
       <div className="min-w-0 flex-1">
         {editing ? (
@@ -90,11 +91,9 @@ export default function FolderCard({
           />
         ) : (
           <>
-            <h3 className="truncate text-sm font-black uppercase tracking-tight text-ink group-hover:text-bold-accent">
-              {folder.name}
-            </h3>
-            <p className="mt-0.5 truncate font-mono text-[9px] font-bold uppercase tracking-wider text-bold-muted">
-              {isOver ? 'Thả để chuyển vào đây' : pathLabel ?? summary}
+            <h3 className="truncate text-sm font-semibold group-hover:text-primary">{folder.name}</h3>
+            <p className="mt-0.5 truncate text-xs text-base-content/60">
+              {isOver ? 'Thả vào đây để chuyển' : pathLabel ?? summary}
             </p>
           </>
         )}
@@ -117,8 +116,10 @@ export default function FolderCard({
 /** Placeholder card shown while naming a new folder. */
 export function NewFolderCard({ onSubmit, onCancel }: { onSubmit: (name: string) => Promise<void>; onCancel: () => void }) {
   return (
-    <div className="flex items-center gap-3 border-2 border-dashed border-bold-border bg-surface p-4">
-      <FolderIcon size={28} strokeWidth={2.25} className="shrink-0 text-bold-muted" />
+    <div className="flex items-center gap-3 rounded-box border border-dashed border-primary/60 bg-base-100 p-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-primary/10 text-primary">
+        <FolderIcon size={20} />
+      </div>
       <div className="min-w-0 flex-1">
         <FolderNameInput initialValue="Folder mới" onSubmit={onSubmit} onCancel={onCancel} />
       </div>

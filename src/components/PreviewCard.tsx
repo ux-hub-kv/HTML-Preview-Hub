@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Folder as FolderIcon, FolderInput, Trash2 } from 'lucide-react';
+import { Clock, FileCode2, Folder as FolderIcon, FolderInput, Trash2 } from 'lucide-react';
 import { HtmlPreview } from '../types';
 import { cn, formatDate } from '../lib/utils';
 import { DRAG_MIME } from '../lib/folders';
@@ -13,9 +13,9 @@ function ExpiryBadge({ expiresAt }: { expiresAt: string | null }) {
   const daysLeft = differenceInDays(new Date(expiresAt), new Date());
   const urgent = daysLeft <= 3;
   return (
-    <span className={`flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-wider ${urgent ? 'text-red-500' : 'text-bold-muted'}`}>
+    <span className={cn('badge badge-sm badge-soft gap-1', urgent ? 'badge-error' : 'badge-ghost')}>
       <Clock size={10} />
-      {daysLeft}d left
+      Còn {daysLeft} ngày
     </span>
   );
 }
@@ -44,26 +44,28 @@ export default function PreviewCard({ preview, onDelete, onMove, pathLabel, isDr
       }}
       onDragEnd={onDragEnd}
       className={cn(
-        'group relative flex flex-col border-2 border-bold-border bg-surface p-4 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] cursor-pointer',
+        'group relative flex flex-col gap-3 rounded-box border border-base-300 bg-base-100 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
         isDragging && 'opacity-40'
       )}
     >
-      <Link to={`/preview/${preview.id}`} draggable={false} className="absolute inset-0 z-0" aria-label={`View ${preview.title}`} />
+      <Link to={`/preview/${preview.id}`} draggable={false} className="absolute inset-0 z-0 rounded-box" aria-label={`Xem ${preview.title}`} />
 
       {confirmDelete && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 border-2 border-red-500 bg-surface p-6">
-          <p className="text-center font-mono text-xs font-bold uppercase tracking-wider text-ink">Xóa preview này?</p>
-          <p className="text-center font-mono text-[10px] uppercase text-bold-muted">File được giữ thêm {TRASH_RETENTION_DAYS} ngày trước khi xóa vĩnh viễn.</p>
-          <div className="flex gap-3">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-box border border-error/40 bg-base-100 p-5 text-center">
+          <p className="text-sm font-semibold">Xóa file này?</p>
+          <p className="text-xs text-base-content/60">File được giữ thêm {TRASH_RETENTION_DAYS} ngày trước khi bị xóa vĩnh viễn.</p>
+          <div className="flex gap-2">
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-              className="border-2 border-bold-border px-4 py-2 text-xs font-black uppercase tracking-wider hover:bg-gray-100 cursor-pointer"
+              className="btn btn-sm btn-ghost"
             >
               Hủy
             </button>
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); onDelete?.(preview.id); }}
-              className="border-2 border-red-500 bg-red-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-red-600 cursor-pointer"
+              className="btn btn-sm btn-error"
             >
               Xóa
             </button>
@@ -71,37 +73,27 @@ export default function PreviewCard({ preview, onDelete, onMove, pathLabel, isDr
         </div>
       )}
 
-      <div className="mb-4 flex flex-1 flex-col">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-bold-muted">
-            HTML Snippet
-          </span>
-          <div className="flex items-center gap-2">
-            <ExpiryBadge expiresAt={preview.expires_at} />
-            <div className="flex gap-1">
-              <span className="h-2 w-2 rounded-full bg-red-400" />
-              <span className="h-2 w-2 rounded-full bg-yellow-400" />
-              <span className="h-2 w-2 rounded-full bg-green-400" />
-            </div>
-          </div>
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-secondary/10 text-secondary">
+          <FileCode2 size={20} />
         </div>
-        <h3 className="line-clamp-1 text-lg font-black uppercase tracking-tight text-ink group-hover:text-bold-accent">
-          {preview.title}
-        </h3>
-        {pathLabel && (
-          <p className="mt-1 flex items-center gap-1 truncate font-mono text-[9px] font-bold uppercase tracking-wider text-bold-muted">
-            <FolderIcon size={10} className="shrink-0" />
-            <span className="truncate">{pathLabel}</span>
-          </p>
-        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">
+            {preview.title}
+          </h3>
+          {pathLabel && (
+            <p className="mt-1 flex items-center gap-1 text-xs text-base-content/60">
+              <FolderIcon size={12} className="shrink-0" />
+              <span className="truncate">{pathLabel}</span>
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-4">
-        <div className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wider text-ink">
-          <div className="flex items-center gap-1.5">
-             <span className="text-bold-muted">DATE:</span>
-            <span>{formatDate(preview.updated_at)}</span>
-          </div>
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-base-200 pt-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-xs text-base-content/60">Cập nhật {formatDate(preview.updated_at)}</span>
+          <ExpiryBadge expiresAt={preview.expires_at} />
         </div>
 
         {(onMove || onDelete) && (

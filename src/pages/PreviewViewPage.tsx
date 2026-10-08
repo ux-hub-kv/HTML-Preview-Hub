@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCcw, Share2, Loader2, AlertCircle, Check, Clock, Trash2 } from 'lucide-react';
+import { ArrowLeft, RefreshCcw, Share2, AlertCircle, Check, Clock, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Folder, HtmlPreview } from '../types';
 import IframePreview from '../components/IframePreview';
+import Modal from '../components/Modal';
 import Breadcrumb, { folderUrl } from '../components/Breadcrumb';
 import { fetchFolders, getFolderPath } from '../lib/folders';
 import { formatDate } from '../lib/utils';
@@ -36,7 +37,7 @@ export default function PreviewViewPage() {
         .single();
 
       if (error) {
-        setError('Preview not found.');
+        setError('Không tìm thấy file này. Link có thể sai hoặc file đã bị xóa vĩnh viễn.');
         setLoading(false);
         return;
       }
@@ -93,7 +94,7 @@ export default function PreviewViewPage() {
   if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="animate-spin text-ink" size={48} />
+        <span className="loading loading-spinner loading-lg text-primary" />
       </div>
     );
   }
@@ -102,138 +103,100 @@ export default function PreviewViewPage() {
     const deletedAt = new Date(preview.deleted_at);
     const purgeAt = addDays(deletedAt, TRASH_RETENTION_DAYS);
     return (
-      <div className="mx-auto max-w-xl px-6 py-20 text-center">
-        <Trash2 size={48} className="mx-auto mb-4 text-bold-muted" />
-        <h1 className="text-2xl font-black uppercase text-ink">File đã bị xóa</h1>
-        <p className="mt-3 font-mono text-xs text-bold-muted">
-          <span className="font-bold text-ink">{preview.title}</span> đã bị xóa ngày {formatDate(deletedAt)}
-          {' '}và sẽ bị xóa vĩnh viễn sau ngày {formatDate(purgeAt)}.
-          <br />
-          Liên hệ quản trị viên nếu cần khôi phục.
+      <div className="mx-auto max-w-md px-4 py-24 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-base-300 text-base-content/60">
+          <Trash2 size={24} />
+        </div>
+        <h1 className="text-xl font-semibold">File đã bị xóa</h1>
+        <p className="mt-2 text-sm text-base-content/70">
+          <span className="font-medium text-base-content">{preview.title}</span> đã bị xóa lúc {formatDate(deletedAt)}
+          {' '}và sẽ bị xóa vĩnh viễn sau {formatDate(purgeAt)}.
         </p>
-        <Link to="/" className="mt-8 inline-block font-black uppercase text-ink underline underline-offset-4">
-          Về trang chủ
-        </Link>
+        <p className="mt-1 text-sm text-base-content/70">Liên hệ quản trị viên nếu cần khôi phục.</p>
+        <Link to="/" className="btn btn-primary btn-sm mt-6">Về trang chủ</Link>
       </div>
     );
   }
 
   if (error || !preview || !publicUrl) {
     return (
-      <div className="mx-auto max-w-xl py-20 text-center">
-        <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
-        <h1 className="text-2xl font-black uppercase text-ink">Eror_404</h1>
-        <p className="mt-2 font-mono text-xs text-bold-muted">{error || 'Something went wrong.'}</p>
-        <Link to="/" className="mt-8 inline-block font-black uppercase text-ink underline underline-offset-4">
-          Return_to_Hub
-        </Link>
+      <div className="mx-auto max-w-md px-4 py-24 text-center">
+        <AlertCircle size={40} className="mx-auto mb-4 text-error" />
+        <h1 className="text-xl font-semibold">Không mở được file</h1>
+        <p className="mt-2 text-sm text-base-content/70">{error || 'Đã có lỗi xảy ra. Hãy thử lại.'}</p>
+        <Link to="/" className="btn btn-primary btn-sm mt-6">Về trang chủ</Link>
       </div>
     );
   }
 
+  const expiryText = getExpiryText(preview.expires_at);
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="flex flex-col gap-6 border-b-2 border-bold-border bg-surface px-10 py-12 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-col gap-2">
-          <div className="mb-4 flex items-center gap-2">
-            <Link
-              to={folderUrl(preview.folder_id ?? null)}
-              aria-label="Quay lại folder"
-              className="flex h-7 w-7 items-center justify-center border-2 border-bold-border text-ink hover:bg-ink hover:text-surface"
-            >
-              <ArrowLeft size={14} />
-            </Link>
-            <Breadcrumb path={folderPath} lastIsCurrent={false} />
-          </div>
-          <h1 className="text-6xl font-black uppercase leading-[0.85] tracking-tighter text-ink">
-            {preview.title}
-          </h1>
-          <div className="flex flex-wrap items-center gap-8 mt-6">
-            {/* <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
-              <span className="text-bold-muted">ID:</span>
-              <span>{preview.id.split('-')[0]}</span>
-            </div>
-            <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
-              <span className="text-bold-muted">AUTHOR:</span>
-              <span>{preview.author || 'ANON'}</span>
-            </div> */}
-            <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
-              <span className="text-bold-muted">UPDATED:</span>
-              <span>{formatDate(preview.updated_at)}</span>
-            </div>
-            {getExpiryText(preview.expires_at) && (
-              <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase">
-                <Clock size={12} />
-                <span>{getExpiryText(preview.expires_at)}</span>
-              </div>
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 px-4 py-8 sm:px-6">
+      <div className="flex items-center gap-2">
+        <Link
+          to={folderUrl(preview.folder_id ?? null)}
+          aria-label="Quay lại folder"
+          className="btn btn-ghost btn-circle btn-sm"
+        >
+          <ArrowLeft size={18} />
+        </Link>
+        <Breadcrumb path={folderPath} lastIsCurrent={false} />
+      </div>
+
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-semibold leading-tight sm:text-3xl">{preview.title}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-content/60">
+            <span>Cập nhật {formatDate(preview.updated_at)}</span>
+            {expiryText && (
+              <span className="flex items-center gap-1.5">
+                <Clock size={14} />
+                {expiryText}
+              </span>
             )}
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={handleShare}
-            disabled={copied}
-            className="flex items-center gap-2 border-2 border-bold-border bg-surface px-6 py-3 text-xs font-black uppercase tracking-wider text-ink transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
-          >
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={handleShare} disabled={copied} className="btn btn-soft">
             {copied ? <Check size={16} /> : <Share2 size={16} />}
-            {copied ? 'Đã copy' : 'Copy Link'}
+            {copied ? 'Đã copy link' : 'Copy link'}
           </button>
-          <Link
-            to={`/replace/${preview.id}`}
-            className="flex items-center gap-2 border-2 border-bold-border bg-ink px-6 py-3 text-xs font-black uppercase tracking-wider text-surface transition-transform hover:scale-105 active:scale-95"
-          >
+          <Link to={`/replace/${preview.id}`} className="btn btn-primary">
             <RefreshCcw size={16} />
-            Cập nhật file mới
+            Cập nhật file
           </Link>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-2 border-2 border-red-500 bg-surface px-6 py-3 text-xs font-black uppercase tracking-wider text-red-500 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
-          >
+          <button type="button" onClick={() => setShowDeleteConfirm(true)} className="btn btn-ghost text-error">
             <Trash2 size={16} />
             Xóa
           </button>
         </div>
       </header>
 
-      <section className="p-10 flex flex-col gap-10">
-        <div className="h-[80vh]">
-           <IframePreview url={publicUrl} title={preview.title} />
-        </div>
+      <section className="h-[80vh] pb-8">
+        <IframePreview url={publicUrl} title={preview.title} />
       </section>
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex flex-col gap-6 border-2 border-bold-border bg-surface p-10 shadow-[8px_8px_0px_rgba(0,0,0,1)] min-w-[320px]">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-2xl font-black uppercase tracking-tight text-ink">Xóa Preview?</h2>
-              <p className="font-mono text-xs text-bold-muted">
-                <span className="font-bold text-ink">{preview.title}</span> sẽ bị xóa khỏi danh sách.
-                <br />File được giữ thêm {TRASH_RETENTION_DAYS} ngày trước khi xóa vĩnh viễn.
-              </p>
-            </div>
-            {deleteError && (
-              <p role="alert" className="font-mono text-[11px] font-bold uppercase text-red-600">{deleteError}</p>
-            )}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleting}
-                className="flex-1 border-2 border-bold-border py-3 text-xs font-black uppercase tracking-wider hover:bg-gray-100 disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex flex-1 items-center justify-center gap-2 border-2 border-red-500 bg-red-500 py-3 text-xs font-black uppercase tracking-wider text-white hover:bg-red-600 disabled:opacity-70"
-              >
-                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                {deleting ? 'Đang xóa...' : 'Xóa'}
-              </button>
-            </div>
+        <Modal title="Xóa file này?" onClose={() => !deleting && setShowDeleteConfirm(false)}>
+          <p className="-mt-2 text-sm text-base-content/70">
+            <span className="font-medium text-base-content">{preview.title}</span> sẽ bị gỡ khỏi danh sách.
+            File được giữ thêm {TRASH_RETENTION_DAYS} ngày trước khi bị xóa vĩnh viễn.
+          </p>
+          {deleteError && (
+            <div role="alert" className="alert alert-error alert-soft py-2 text-sm">{deleteError}</div>
+          )}
+          <div className="modal-action mt-0">
+            <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="btn btn-ghost">
+              Hủy
+            </button>
+            <button type="button" onClick={handleDelete} disabled={deleting} className="btn btn-error">
+              {deleting ? <span className="loading loading-spinner loading-xs" /> : <Trash2 size={14} />}
+              {deleting ? 'Đang xóa…' : 'Xóa'}
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileCode, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, FileCode, X, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { EXPIRY_ENABLED } from '../lib/config';
 
@@ -28,11 +28,11 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
 
   const handleFile = (selectedFile: File) => {
     if (selectedFile.type !== 'text/html' && !selectedFile.name.endsWith('.html')) {
-      setError('PLEASE_UPLOAD_VALID_HTML');
+      setError('Chỉ hỗ trợ file .html. Hãy chọn file khác.');
       return;
     }
     if (selectedFile.size > 2 * 1024 * 1024) {
-      setError('FILE_EXCEEDS_2MB_LIMIT');
+      setError('File lớn hơn 2MB. Hãy chọn file nhỏ hơn.');
       return;
     }
     setFile(selectedFile);
@@ -65,11 +65,11 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file && !isReplacing) {
-      setError('HTML_FILE_MISSING');
+      setError('Hãy chọn file HTML để tải lên.');
       return;
     }
     if (!formData.title) {
-      setError('TITLE_REQUIRED');
+      setError('Hãy nhập tên cho file.');
       return;
     }
 
@@ -88,36 +88,32 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
       if (!file && isReplacing) {
         // metadata only update
       } else if (!file) {
-        setError('HTML_FILE_REQUIRED');
+        setError('Hãy chọn file HTML để tải lên.');
         setLoading(false);
         return;
       }
 
       await onSubmit(data, file!);
     } catch (err: any) {
-      setError(err.message || 'SYSTEM_ERROR_OCCURRED');
+      setError(err.message || 'Đã có lỗi xảy ra. Hãy thử lại.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="space-y-3">
-        <label className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-bold-muted">
-          Raw_HTML_Source
-        </label>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">File HTML</legend>
         <div
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
           className={cn(
-            'relative flex h-[200px] flex-col items-center justify-center border-4 border-dashed transition-all',
-            dragActive
-              ? 'border-bold-accent bg-blue-50'
-              : 'border-gray-200 bg-surface',
-            file && 'border-solid border-bold-border bg-gray-50'
+            'relative flex h-48 flex-col items-center justify-center rounded-box border-2 border-dashed transition-colors',
+            dragActive ? 'border-primary bg-primary/5' : 'border-base-content/20 bg-base-100 hover:border-primary/60',
+            file && 'border-solid border-primary/40 bg-primary/5'
           )}
         >
           <input
@@ -125,116 +121,95 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
             accept=".html"
             onChange={(e) => e.target.files && handleFile(e.target.files[0])}
             className="absolute inset-0 z-10 cursor-pointer opacity-0"
+            aria-label="Chọn file HTML"
           />
 
           {!file ? (
-            <div className="flex flex-col items-center p-8 text-center">
-              <div className="mb-4 border-2 border-bold-border p-3 text-ink">
-                <Upload size={28} />
+            <div className="flex flex-col items-center p-6 text-center">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Upload size={20} />
               </div>
-              <p className="text-sm font-black uppercase tracking-widest text-ink">
-                Drag_drop_source_file
+              <p className="text-sm font-medium">
+                Kéo thả file vào đây hoặc <span className="text-primary">chọn file</span>
               </p>
-              <p className="mt-2 font-mono text-[10px] font-bold uppercase text-bold-muted">
-                SUPPORTS: .HTML ONLY | SIZE_LIMIT: 2MB
+              <p className="mt-1 text-xs text-base-content/60">
+                {isReplacing ? 'Bỏ trống nếu chỉ muốn đổi tên. ' : ''}Chỉ file .html, tối đa 2MB
               </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center p-8 text-center animate-in zoom-in-95 duration-300">
-              <FileCode size={48} className="mb-3 text-ink" />
-              <p className="max-w-[240px] truncate text-lg font-black uppercase tracking-tight text-ink">
-                {file.name}
-              </p>
-              <p className="font-mono text-[10px] font-bold uppercase text-bold-muted mt-1">
-                SOURCE_READY ({(file.size / 1024).toFixed(1)} KB)
-              </p>
+            <div className="flex flex-col items-center p-6 text-center">
+              <FileCode size={36} className="mb-2 text-primary" />
+              <p className="max-w-[260px] truncate text-sm font-semibold">{file.name}</p>
+              <p className="mt-0.5 text-xs text-base-content/60">Sẵn sàng tải lên · {(file.size / 1024).toFixed(1)} KB</p>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setFile(null);
                 }}
-                className="mt-4 flex items-center gap-2 font-mono text-[10px] font-black uppercase text-red-600 hover:scale-105"
+                className="btn btn-ghost btn-xs relative z-20 mt-3 text-error"
               >
-                <X size={14} /> Clear_selection
+                <X size={14} /> Bỏ chọn file
               </button>
             </div>
           )}
         </div>
-      </div>
+      </fieldset>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        <div>
-          <label className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-bold-muted mb-3">
-            Snippet_Title
-          </label>
+      <div className="grid gap-4 md:grid-cols-2">
+        <fieldset className="fieldset">
+          <legend className="fieldset-legend">Tên file</legend>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full border-2 border-bold-border bg-surface px-6 py-4 text-sm font-bold uppercase tracking-wider focus:outline-none"
-            placeholder="e.g. MARKETING_CAMPAIGN_V2"
+            className="input w-full"
+            placeholder="Landing page chiến dịch tháng 10"
             required
           />
-        </div>
+        </fieldset>
 
-        <div>
-          <label className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-bold-muted mb-3">
-            Author_Identifier
-          </label>
+        <fieldset className="fieldset">
+          <legend className="fieldset-legend">Người đăng</legend>
           <input
             type="text"
             value={formData.author}
             onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-            className="w-full border-2 border-bold-border bg-surface px-6 py-4 text-sm font-bold uppercase tracking-wider focus:outline-none"
-            placeholder="e.g. S.JENKINS"
+            className="input w-full"
+            placeholder="Nguyễn Văn A"
           />
-        </div>
+        </fieldset>
       </div>
 
       {!isReplacing && EXPIRY_ENABLED && (
-        <div>
-          <label className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-bold-muted mb-3">
-            Auto_Delete_After
-          </label>
-          <div className="flex gap-2">
+        <fieldset className="fieldset">
+          <legend className="fieldset-legend">Tự xóa sau</legend>
+          <div className="join w-full">
             {([14, 60, null] as const).map((days) => (
               <button
                 key={String(days)}
                 type="button"
                 onClick={() => setExpiryDays(days)}
-                className={cn(
-                  'flex-1 border-2 py-3 text-xs font-black uppercase tracking-wider transition-all',
-                  expiryDays === days
-                    ? 'border-ink bg-ink text-surface'
-                    : 'border-bold-border bg-surface text-ink hover:border-ink'
-                )}
+                className={cn('btn join-item flex-1', expiryDays === days && 'btn-primary')}
               >
-                {days === null ? 'Never' : `${days} Days`}
+                {days === null ? 'Không bao giờ' : `${days} ngày`}
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
       )}
 
       {error && (
-        <div className="flex items-center gap-3 border-2 border-red-600 bg-red-50 p-6 font-mono text-xs font-bold uppercase text-red-600">
-          <AlertCircle size={20} />
-          <span>Error_Code: {error}</span>
+        <div role="alert" className="alert alert-error alert-soft">
+          <AlertCircle size={18} />
+          <span>{error}</span>
         </div>
       )}
 
-      <div className="flex justify-end gap-6 pt-8 border-t-2 border-bold-border">
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex min-w-[200px] items-center justify-center gap-3 border-2 border-bold-border bg-ink px-10 py-5 text-sm font-black uppercase tracking-widest text-surface transition-all hover:scale-[1.05] active:scale-95 disabled:opacity-50"
-        >
-          {loading ? (
-            <Loader2 className="animate-spin" size={20} />
-          ) : (
-            isReplacing ? 'OVERWRITE_EXISTING' : 'INIT_UPLOAD'
-          )}
+      <div className="flex justify-end border-t border-base-300 pt-5">
+        <button type="submit" disabled={loading} className="btn btn-primary min-w-40">
+          {loading && <span className="loading loading-spinner loading-sm" />}
+          {isReplacing ? 'Lưu thay đổi' : 'Tải lên'}
         </button>
       </div>
     </form>

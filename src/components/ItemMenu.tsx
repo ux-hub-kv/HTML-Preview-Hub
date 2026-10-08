@@ -57,12 +57,9 @@ export default function ItemMenu({ actions, label }: { actions: MenuAction[]; la
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={!!pos}
-        className={cn(
-          'relative z-10 p-1.5 text-bold-muted transition-colors hover:text-ink cursor-pointer',
-          pos && 'text-ink'
-        )}
+        className={cn('btn btn-ghost btn-circle btn-sm relative z-10 text-base-content/60', pos && 'bg-base-200 text-base-content')}
       >
-        <MoreHorizontal size={16} />
+        <MoreHorizontal size={18} />
       </button>
       {pos &&
         createPortal(
@@ -70,27 +67,27 @@ export default function ItemMenu({ actions, label }: { actions: MenuAction[]; la
             ref={menuRef}
             role="menu"
             style={{ top: pos.top, right: pos.right }}
-            className="fixed z-40 min-w-[180px] border-2 border-bold-border bg-surface py-1 shadow-[4px_4px_0px_rgba(0,0,0,1)]"
+            className="fixed z-40 min-w-[190px] rounded-box border border-base-300 bg-base-100 p-1 shadow-lg"
           >
-            {actions.map((action) => (
-              <button
-                key={action.label}
-                type="button"
-                role="menuitem"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPos(null);
-                  action.onSelect();
-                }}
-                className={cn(
-                  'flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-black uppercase tracking-wider hover:bg-gray-100 cursor-pointer',
-                  action.danger ? 'text-red-500' : 'text-ink'
-                )}
-              >
-                {action.icon}
-                {action.label}
-              </button>
-            ))}
+            <ul className="menu menu-sm w-full p-0">
+              {actions.map((action) => (
+                <li key={action.label}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPos(null);
+                      action.onSelect();
+                    }}
+                    className={cn('gap-3 py-2', action.danger && 'text-error')}
+                  >
+                    {action.icon}
+                    {action.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>,
           document.body
         )}

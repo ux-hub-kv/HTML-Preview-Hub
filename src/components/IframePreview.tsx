@@ -14,7 +14,7 @@ export default function IframePreview({ url, title }: IframePreviewProps) {
     fetch(url)
       .then(res => res.text())
       .then(setSrcDoc)
-      .catch(() => setSrcDoc('<p>Failed to load preview.</p>'));
+      .catch(() => setSrcDoc('<p style="font-family:sans-serif;padding:16px">Không tải được nội dung file.</p>'));
   }, [url]);
 
   useEffect(() => {
@@ -34,28 +34,30 @@ export default function IframePreview({ url, title }: IframePreviewProps) {
   };
 
   const frame = (
-    <div className={`flex flex-col overflow-hidden border-2 border-bold-border bg-white shadow-[8px_8px_0px_rgba(0,0,0,0.05)] ${fullscreen ? 'fixed inset-0 z-50 border-0 shadow-none' : 'h-full w-full'}`}>
-      <div className="flex h-12 shrink-0 items-center justify-between border-b-2 border-bold-border bg-surface px-4">
+    <div className={`flex flex-col overflow-hidden bg-base-100 ${fullscreen ? 'fixed inset-0 z-50' : 'h-full w-full rounded-box border border-base-300 shadow-sm'}`}>
+      <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-base-300 bg-base-200/60 px-3">
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full border border-bold-border bg-red-400" />
-          <div className="h-3 w-3 rounded-full border border-bold-border bg-yellow-400" />
-          <div className="h-3 w-3 rounded-full border border-bold-border bg-green-400" />
+          <div className="h-3 w-3 rounded-full bg-red-400" />
+          <div className="h-3 w-3 rounded-full bg-yellow-400" />
+          <div className="h-3 w-3 rounded-full bg-green-400" />
         </div>
-        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-bold-muted truncate max-w-[300px]">
+        <span className="min-w-0 max-w-[60%] truncate rounded-field bg-base-100 px-3 py-1 text-xs text-base-content/60">
           {url}
         </span>
         <div className="flex items-center gap-1">
           <button
             onClick={handleDownload}
-            title="Download HTML"
-            className="flex items-center justify-center w-8 h-8 hover:bg-gray-100 transition-colors"
+            title="Tải file HTML"
+            aria-label="Tải file HTML"
+            className="btn btn-ghost btn-square btn-sm"
           >
             <Download size={14} />
           </button>
           <button
             onClick={() => setFullscreen(f => !f)}
-            title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-            className="flex items-center justify-center w-8 h-8 hover:bg-gray-100 transition-colors"
+            title={fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+            aria-label={fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+            className="btn btn-ghost btn-square btn-sm"
           >
             {fullscreen ? <X size={14} /> : <Maximize2 size={14} />}
           </button>
@@ -63,8 +65,8 @@ export default function IframePreview({ url, title }: IframePreviewProps) {
       </div>
       <div className="flex-1 min-h-0 relative">
         {srcDoc === null && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+          <div className="absolute inset-0 flex items-center justify-center bg-base-100">
+            <span className="loading loading-spinner loading-md text-primary" />
           </div>
         )}
         {srcDoc !== null && (

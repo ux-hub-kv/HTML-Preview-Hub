@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Loader2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ToastOptions {
   message: React.ReactNode;
@@ -68,25 +68,25 @@ function ToastView({ toast, onClose }: { toast: ToastState; onClose: () => void 
       aria-live="polite"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="fixed bottom-6 left-1/2 z-[60] flex w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 items-start gap-4 border-2 border-bold-border bg-ink p-4 text-surface shadow-[6px_6px_0px_rgba(0,0,0,0.25)]"
+      className="fixed bottom-6 left-1/2 z-[60] flex w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 items-start gap-3 rounded-box bg-neutral p-4 text-neutral-content shadow-xl"
     >
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black uppercase tracking-tight">{toast.message}</p>
-        {toast.detail && <p className="mt-1 font-mono text-[11px] text-surface/70">{toast.detail}</p>}
-        {failed && <p className="mt-1 font-mono text-[11px] font-bold text-red-300">Không hoàn tác được, vui lòng thử lại.</p>}
+        <p className="text-sm font-semibold">{toast.message}</p>
+        {toast.detail && <p className="mt-1 text-xs text-neutral-content/70">{toast.detail}</p>}
+        {failed && <p className="mt-1 text-xs text-error">Không hoàn tác được. Hãy thử lại.</p>}
       </div>
       {toast.action && (
         <button
           type="button"
           onClick={runAction}
           disabled={busy}
-          className="flex shrink-0 items-center gap-2 border-2 border-surface px-3 py-1.5 text-xs font-black uppercase tracking-wider hover:bg-surface hover:text-ink disabled:opacity-60 cursor-pointer"
+          className="btn btn-sm btn-primary shrink-0"
         >
-          {busy && <Loader2 size={12} className="animate-spin" />}
+          {busy && <span className="loading loading-spinner loading-xs" />}
           {toast.action.label}
         </button>
       )}
-      <button type="button" onClick={onClose} aria-label="Đóng thông báo" className="shrink-0 p-1 text-surface/70 hover:text-surface cursor-pointer">
+      <button type="button" onClick={onClose} aria-label="Đóng thông báo" className="btn btn-ghost btn-circle btn-xs shrink-0 text-neutral-content/70 hover:bg-neutral-content/10">
         <X size={14} />
       </button>
     </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertCircle, AlertTriangle, Loader2, Trash2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Trash2 } from 'lucide-react';
 import { Folder, HtmlPreview } from '../types';
 import { friendlyError, getCurrentAuthor, getSubtreeIds, isVisible } from '../lib/folders';
 import { TRASH_RETENTION_DAYS } from '../lib/config';
@@ -57,18 +57,18 @@ export default function DeleteFolderDialog({ folder, folders, previews, onClose,
   return (
     <Modal title="Xóa folder?" onClose={() => !deleting && onClose()}>
       {isEmpty ? (
-        <p className="-mt-3 font-mono text-xs text-bold-muted">
-          Folder <span className="font-bold text-ink">{folder.name}</span> đang trống và sẽ bị xóa.
+        <p className="-mt-2 text-sm text-base-content/70">
+          Folder <span className="font-semibold text-base-content">{folder.name}</span> đang trống và sẽ bị xóa.
         </p>
       ) : (
         <>
-          <p className="-mt-3 font-mono text-xs text-bold-muted">
-            Folder <span className="font-bold text-ink">{folder.name}</span> đang chứa{' '}
-            <span className="font-bold text-ink">{contents}</span>.
+          <p className="-mt-2 text-sm text-base-content/70">
+            Folder <span className="font-semibold text-base-content">{folder.name}</span> đang chứa{' '}
+            <span className="font-semibold text-base-content">{contents}</span>.
           </p>
 
           {stats.otherAuthors.length > 0 && (
-            <div className="flex items-start gap-2 border-2 border-amber-500 bg-amber-50 p-3 font-mono text-[11px] font-bold text-amber-800">
+            <div className="alert alert-warning alert-soft items-start py-2 text-sm text-base-content">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <span>
                 {stats.knowsMe ? 'Có file do người khác đăng' : 'Folder chứa file của'}: {stats.otherAuthors.slice(0, 3).join(', ')}
@@ -81,7 +81,7 @@ export default function DeleteFolderDialog({ folder, folders, previews, onClose,
             <ModeOption
               checked={mode === 'ungroup'}
               onSelect={() => setMode('ungroup')}
-              title="Chỉ xóa folder, giữ nội dung"
+              title="Chỉ xóa folder, giữ lại nội dung"
               description={`Toàn bộ nội dung được chuyển lên "${parentName}". Link đã chia sẻ vẫn hoạt động.`}
             />
             <ModeOption
@@ -100,18 +100,18 @@ export default function DeleteFolderDialog({ folder, folders, previews, onClose,
       )}
 
       {error && (
-        <div role="alert" className="flex items-center gap-2 border-2 border-red-600 bg-red-50 p-3 font-mono text-[11px] font-bold uppercase text-red-600">
+        <div role="alert" className="alert alert-error alert-soft py-2 text-sm">
           <AlertCircle size={14} className="shrink-0" />
           {error}
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="modal-action mt-0">
         <button
           type="button"
           onClick={onClose}
           disabled={deleting}
-          className="flex-1 border-2 border-bold-border py-3 text-xs font-black uppercase tracking-wider hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
+          className="btn btn-ghost"
         >
           Hủy
         </button>
@@ -120,11 +120,11 @@ export default function DeleteFolderDialog({ folder, folders, previews, onClose,
           onClick={confirm}
           disabled={deleting}
           className={cn(
-            'flex flex-1 items-center justify-center gap-2 border-2 py-3 text-xs font-black uppercase tracking-wider text-white disabled:opacity-70 cursor-pointer',
-            effectiveMode === 'all' ? 'border-red-500 bg-red-500 hover:bg-red-600' : 'border-bold-border bg-ink hover:opacity-90'
+            'btn',
+            effectiveMode === 'all' ? 'btn-error' : 'btn-primary'
           )}
         >
-          {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          {deleting ? <span className="loading loading-spinner loading-xs" /> : <Trash2 size={14} />}
           {deleting ? 'Đang xóa...' : effectiveMode === 'all' && !isEmpty ? 'Xóa toàn bộ' : 'Xóa folder'}
         </button>
       </div>
@@ -152,21 +152,21 @@ function ModeOption({
       aria-checked={checked}
       onClick={onSelect}
       className={cn(
-        'flex items-start gap-3 border-2 p-4 text-left transition-colors cursor-pointer',
-        checked ? (danger ? 'border-red-500 bg-red-50' : 'border-ink bg-gray-50') : 'border-gray-200 hover:border-bold-border'
+        'flex items-start gap-3 rounded-box border p-4 text-left transition-colors cursor-pointer',
+        checked ? (danger ? 'border-error bg-error/5' : 'border-primary bg-primary/5') : 'border-base-300 hover:border-base-content/30'
       )}
     >
       <span
         className={cn(
           'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2',
-          checked ? (danger ? 'border-red-500' : 'border-ink') : 'border-bold-muted'
+          checked ? (danger ? 'border-error' : 'border-primary') : 'border-base-content/30'
         )}
       >
-        {checked && <span className={cn('h-2 w-2 rounded-full', danger ? 'bg-red-500' : 'bg-ink')} />}
+        {checked && <span className={cn('h-2 w-2 rounded-full', danger ? 'bg-error' : 'bg-primary')} />}
       </span>
       <span className="flex flex-col gap-1">
-        <span className={cn('text-xs font-black uppercase tracking-wider', danger ? 'text-red-600' : 'text-ink')}>{title}</span>
-        <span className="font-mono text-[11px] text-bold-muted">{description}</span>
+        <span className={cn('text-sm font-semibold', danger && 'text-error')}>{title}</span>
+        <span className="text-xs text-base-content/60">{description}</span>
       </span>
     </button>
   );

@@ -43,22 +43,18 @@ export default function NewPreviewPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="flex flex-col border-b-2 border-bold-border bg-surface px-10 py-12">
-        <Link to="/" className="mb-4 inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest text-bold-muted hover:text-ink transition-colors">
-          <ArrowLeft size={14} />
-          Abort_command
+    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
+      <div>
+        <Link to="/" className="btn btn-ghost btn-sm -ml-3 mb-2">
+          <ArrowLeft size={16} />
+          Quay lại
         </Link>
-        <h1 className="text-6xl font-black uppercase leading-[0.85] tracking-tighter text-ink">
-          New_Preview
-        </h1>
-        <p className="mt-4 font-mono text-xs font-bold uppercase text-bold-muted tracking-wider">
-          Upload custom HTML source for instant deployment.
-        </p>
-      </header>
-      
-      <div className="p-10">
-        <div className="border-2 border-bold-border bg-surface p-12 shadow-[12px_12px_0px_rgba(0,0,0,0.05)]">
+        <h1 className="text-2xl font-semibold">Tải lên file mới</h1>
+        <p className="mt-1 text-sm text-base-content/70">Tải file HTML lên để có link xem và chia sẻ ngay.</p>
+      </div>
+
+      <div className="card border border-base-300 bg-base-100 shadow-sm">
+        <div className="card-body">
           <UploadForm onSubmit={handleCreate} />
         </div>
       </div>
