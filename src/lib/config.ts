@@ -7,3 +7,6 @@ export const EXPIRY_ENABLED = false;
 
 /** Days a deleted preview stays in the bucket before it is purged for good. */
 export const TRASH_RETENTION_DAYS = 30;
+
+/** Largest HTML file accepted for upload. */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;

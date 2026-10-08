@@ -7,10 +7,15 @@ export default function FolderNameInput({
   initialValue,
   onSubmit,
   onCancel,
+  label = 'Tên folder',
+  className,
 }: {
   initialValue: string;
   onSubmit: (name: string) => Promise<void>;
   onCancel: () => void;
+  /** What is being named, e.g. "Tên folder" or "Tên file" */
+  label?: string;
+  className?: string;
 }) {
   const [value, setValue] = useState(initialValue);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +32,7 @@ export default function FolderNameInput({
     if (busy.current) return;
     const name = value.trim();
     if (!name) {
-      setError('Hãy nhập tên folder');
+      setError(`Hãy nhập ${label.toLowerCase()}`);
       return;
     }
     busy.current = true;
@@ -49,7 +54,7 @@ export default function FolderNameInput({
         <input
           ref={inputRef}
           value={value}
-          maxLength={100}
+          maxLength={200}
           disabled={saving}
           onChange={(e) => { setValue(e.target.value); setError(null); }}
           onKeyDown={(e) => {
@@ -57,9 +62,9 @@ export default function FolderNameInput({
             if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
           }}
           onBlur={() => { if (!error) submit(); }}
-          aria-label="Tên folder"
+          aria-label={label}
           aria-invalid={!!error}
-          className={cn('input input-sm w-full min-w-0 flex-1', error && 'input-error')}
+          className={cn('input input-sm w-full min-w-0 flex-1', error && 'input-error', className)}
         />
         {saving && <span className="loading loading-spinner loading-xs shrink-0" />}
       </div>

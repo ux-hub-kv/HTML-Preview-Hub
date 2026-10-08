@@ -25,12 +25,12 @@ export default function Breadcrumb({ path, lastIsCurrent = true, canDropOn, onDr
   ];
 
   return (
-    <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-0.5 text-sm">
+    <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center text-xs">
       {segments.map((segment, i) => {
         const isLast = i === segments.length - 1;
         return (
           <Fragment key={segment.id ?? 'root'}>
-            {i > 0 && <ChevronRight size={14} className="text-base-content/40" aria-hidden="true" />}
+            {i > 0 && <ChevronRight size={12} className="text-base-content/30" aria-hidden="true" />}
             <Segment
               id={segment.id}
               name={segment.name}
@@ -61,15 +61,15 @@ function Segment({
   const { isOver, dropHandlers } = useDropZone(canDrop, onDrop);
   const content = (
     <>
-      {id === null && <Home size={14} />}
+      {id === null && <Home size={12} />}
       <span className="max-w-[220px] truncate">{name}</span>
     </>
   );
-  const base = 'flex items-center gap-1.5 rounded-field border border-transparent px-2 py-1 transition-colors';
+  const base = 'flex items-center gap-1 rounded-field border border-transparent px-1.5 py-0.5 transition-colors';
 
   if (current) {
     return (
-      <span aria-current="page" className={cn(base, 'font-semibold text-base-content')} {...dropHandlers}>
+      <span aria-current="page" className={cn(base, 'font-medium text-base-content/80')} {...dropHandlers}>
         {content}
       </span>
     );
@@ -81,7 +81,7 @@ function Segment({
       {...dropHandlers}
       className={cn(
         base,
-        'text-base-content/60 hover:bg-base-300/60 hover:text-base-content',
+        'text-base-content/50 hover:bg-base-300/60 hover:text-base-content',
         canDrop && 'border-dashed border-primary/50',
         isOver && 'border-solid border-primary bg-primary/10 text-primary'
       )}

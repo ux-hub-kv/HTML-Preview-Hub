@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, FileCode2, Folder as FolderIcon, FolderInput, Trash2 } from 'lucide-react';
+import { Clock, FileCode2, Folder as FolderIcon, FolderInput, Pencil, Trash2 } from 'lucide-react';
 import { HtmlPreview } from '../types';
 import { cn, formatDate } from '../lib/utils';
 import { DRAG_MIME } from '../lib/folders';
 import ItemMenu from './ItemMenu';
+import FolderNameInput from './FolderNameInput';
 import { EXPIRY_ENABLED, TRASH_RETENTION_DAYS } from '../lib/config';
 import { differenceInDays } from 'date-fns';
 
@@ -24,6 +25,7 @@ interface PreviewCardProps {
   preview: HtmlPreview;
   onDelete?: (id: string) => void;
   onMove?: () => void;
+  onRename?: (title: string) => Promise<void>;
   /** Folder path shown under the title (search results). */
   pathLabel?: string;
   isDragging?: boolean;
@@ -31,12 +33,13 @@ interface PreviewCardProps {
   onDragEnd?: () => void;
 }
 
-export default function PreviewCard({ preview, onDelete, onMove, pathLabel, isDragging, onDragStart, onDragEnd }: PreviewCardProps) {
+export default function PreviewCard({ preview, onDelete, onMove, onRename, pathLabel, isDragging, onDragStart, onDragEnd }: PreviewCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   return (
     <div
-      draggable={!!onDragStart && !confirmDelete}
+      draggable={!!onDragStart && !confirmDelete && !editing}
       onDragStart={(e) => {
         e.dataTransfer.setData(DRAG_MIME, JSON.stringify({ type: 'file', id: preview.id }));
         e.dataTransfer.effectAllowed = 'move';
@@ -48,7 +51,9 @@ export default function PreviewCard({ preview, onDelete, onMove, pathLabel, isDr
         isDragging && 'opacity-40'
       )}
     >
-      <Link to={`/preview/${preview.id}`} draggable={false} className="absolute inset-0 z-0 rounded-box" aria-label={`Xem ${preview.title}`} />
+      {!editing && (
+        <Link to={`/preview/${preview.id}`} draggable={false} className="absolute inset-0 z-0 rounded-box" aria-label={`Xem ${preview.title}`} />
+      )}
 
       {confirmDelete && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-box border border-error/40 bg-base-100 p-5 text-center">
@@ -78,9 +83,21 @@ export default function PreviewCard({ preview, onDelete, onMove, pathLabel, isDr
           <FileCode2 size={20} />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">
-            {preview.title}
-          </h3>
+          {editing && onRename ? (
+            <FolderNameInput
+              label="Tên file"
+              initialValue={preview.title}
+              onCancel={() => setEditing(false)}
+              onSubmit={async (title) => {
+                if (title !== preview.title) await onRename(title);
+                setEditing(false);
+              }}
+            />
+          ) : (
+            <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">
+              {preview.title}
+            </h3>
+          )}
           {pathLabel && (
             <p className="mt-1 flex items-center gap-1 text-xs text-base-content/60">
               <FolderIcon size={12} className="shrink-0" />
@@ -96,10 +113,11 @@ export default function PreviewCard({ preview, onDelete, onMove, pathLabel, isDr
           <ExpiryBadge expiresAt={preview.expires_at} />
         </div>
 
-        {(onMove || onDelete) && (
+        {(onMove || onDelete || onRename) && !editing && (
           <ItemMenu
             label={`Tùy chọn cho ${preview.title}`}
             actions={[
+              ...(onRename ? [{ label: 'Đổi tên', icon: <Pencil size={14} />, onSelect: () => setEditing(true) }] : []),
               ...(onMove ? [{ label: 'Di chuyển tới…', icon: <FolderInput size={14} />, onSelect: onMove }] : []),
               ...(onDelete
                 ? [{ label: 'Xóa', icon: <Trash2 size={14} />, onSelect: () => setConfirmDelete(true), danger: true }]

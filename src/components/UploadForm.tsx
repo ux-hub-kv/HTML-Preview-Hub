@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, FileCode, X, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { EXPIRY_ENABLED } from '../lib/config';
+import { EXPIRY_ENABLED, MAX_UPLOAD_BYTES } from '../lib/config';
 
 const AUTHOR_STORAGE_KEY = 'html-preview-hub-author';
 
@@ -31,8 +31,8 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
       setError('Chỉ hỗ trợ file .html. Hãy chọn file khác.');
       return;
     }
-    if (selectedFile.size > 2 * 1024 * 1024) {
-      setError('File lớn hơn 2MB. Hãy chọn file nhỏ hơn.');
+    if (selectedFile.size > MAX_UPLOAD_BYTES) {
+      setError('File lớn hơn 10MB. Hãy chọn file nhỏ hơn.');
       return;
     }
     setFile(selectedFile);
@@ -133,7 +133,7 @@ export default function UploadForm({ initialData, onSubmit, isReplacing }: Uploa
                 Kéo thả file vào đây hoặc <span className="text-primary">chọn file</span>
               </p>
               <p className="mt-1 text-xs text-base-content/60">
-                {isReplacing ? 'Bỏ trống nếu chỉ muốn đổi tên. ' : ''}Chỉ file .html, tối đa 2MB
+                {isReplacing ? 'Bỏ trống nếu chỉ muốn đổi tên. ' : ''}Chỉ file .html, tối đa 10MB
               </p>
             </div>
           ) : (

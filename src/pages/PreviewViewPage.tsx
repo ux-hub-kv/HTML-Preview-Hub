@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCcw, Share2, AlertCircle, Check, Clock, Trash2 } from 'lucide-react';
+import { ArrowLeft, RefreshCcw, Share2, AlertCircle, Check, Clock, Pencil, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Folder, HtmlPreview } from '../types';
 import IframePreview from '../components/IframePreview';
 import Modal from '../components/Modal';
 import Breadcrumb, { folderUrl } from '../components/Breadcrumb';
-import { fetchFolders, getFolderPath } from '../lib/folders';
+import { fetchFolders, friendlyError, getFolderPath, previewFileUrl, renamePreview, replacePreviewFile, validateHtmlFile } from '../lib/folders';
+import FolderNameInput from '../components/FolderNameInput';
+import { useToast } from '../components/Toast';
 import { formatDate } from '../lib/utils';
 import { EXPIRY_ENABLED, TRASH_RETENTION_DAYS } from '../lib/config';
 import { useTrashPreview } from '../lib/useTrashPreview';
@@ -17,8 +19,12 @@ export default function PreviewViewPage() {
   const navigate = useNavigate();
   const trashPreview = useTrashPreview();
   const [preview, setPreview] = useState<HtmlPreview | null>(null);
-  const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [renaming, setRenaming] = useState(false);
+  const [replacing, setReplacing] = useState(false);
+  const [replaceError, setReplaceError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -43,12 +49,6 @@ export default function PreviewViewPage() {
       }
 
       setPreview(data);
-
-      const { data: storageData } = supabase.storage
-        .from('previews')
-        .getPublicUrl(data.file_path);
-
-      setPublicUrl(storageData.publicUrl);
       setLoading(false);
 
       if (data.folder_id) {
@@ -73,9 +73,39 @@ export default function PreviewViewPage() {
     }
   };
 
+  const handleReplace = async (file: File) => {
+    if (!preview) return;
+    const invalid = validateHtmlFile(file);
+    if (invalid) {
+      setReplaceError(invalid);
+      return;
+    }
+    setReplaceError(null);
+    setReplacing(true);
+    try {
+      const updatedAt = await replacePreviewFile(preview, file);
+      setPreview({ ...preview, updated_at: updatedAt });
+      toast({ message: 'Đã thay file', detail: 'Link chia sẻ giữ nguyên, người xem sẽ thấy nội dung mới.' });
+    } catch (err) {
+      setReplaceError(friendlyError(err));
+    } finally {
+      setReplacing(false);
+    }
+  };
+
+  const handleRename = async (title: string) => {
+    if (!preview) return;
+    if (title !== preview.title) {
+      await renamePreview(preview.id, title);
+      setPreview({ ...preview, title });
+    }
+    setRenaming(false);
+  };
+
   const handleShare = () => {
     if (copied) return;
-    navigator.clipboard.writeText(window.location.href);
+    // Shared links open the prototype full page, not this detail page
+    navigator.clipboard.writeText(`${window.location.origin}/view/${preview!.id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -118,7 +148,7 @@ export default function PreviewViewPage() {
     );
   }
 
-  if (error || !preview || !publicUrl) {
+  if (error || !preview) {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
         <AlertCircle size={40} className="mx-auto mb-4 text-error" />
@@ -137,16 +167,39 @@ export default function PreviewViewPage() {
         <Link
           to={folderUrl(preview.folder_id ?? null)}
           aria-label="Quay lại folder"
-          className="btn btn-ghost btn-circle btn-sm"
+          className="btn btn-ghost btn-circle btn-xs"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={14} />
         </Link>
         <Breadcrumb path={folderPath} lastIsCurrent={false} />
       </div>
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
-          <h1 className="break-words text-2xl font-semibold leading-tight sm:text-3xl">{preview.title}</h1>
+        <div className="min-w-0 flex-1">
+          {renaming ? (
+            <div className="max-w-xl">
+              <FolderNameInput
+                label="Tên file"
+                initialValue={preview.title}
+                onCancel={() => setRenaming(false)}
+                onSubmit={handleRename}
+                className="input-lg text-xl font-semibold"
+              />
+            </div>
+          ) : (
+            <div className="group flex items-start gap-1">
+              <h1 className="break-words text-2xl font-semibold leading-tight sm:text-3xl">{preview.title}</h1>
+              <button
+                type="button"
+                onClick={() => setRenaming(true)}
+                aria-label="Đổi tên file"
+                title="Đổi tên"
+                className="btn btn-ghost btn-circle btn-sm mt-0.5 shrink-0 text-base-content/50 hover:text-base-content"
+              >
+                <Pencil size={16} />
+              </button>
+            </div>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-content/60">
             <span>Cập nhật {formatDate(preview.updated_at)}</span>
             {expiryText && (
@@ -163,10 +216,26 @@ export default function PreviewViewPage() {
             {copied ? <Check size={16} /> : <Share2 size={16} />}
             {copied ? 'Đã copy link' : 'Copy link'}
           </button>
-          <Link to={`/replace/${preview.id}`} className="btn btn-primary">
-            <RefreshCcw size={16} />
-            Cập nhật file
-          </Link>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={replacing}
+            className="btn btn-primary"
+          >
+            {replacing ? <span className="loading loading-spinner loading-xs" /> : <RefreshCcw size={16} />}
+            {replacing ? 'Đang thay file…' : 'Replace file'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".html"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) handleReplace(file);
+            }}
+          />
           <button type="button" onClick={() => setShowDeleteConfirm(true)} className="btn btn-ghost text-error">
             <Trash2 size={16} />
             Xóa
@@ -174,8 +243,18 @@ export default function PreviewViewPage() {
         </div>
       </header>
 
+      {replaceError && (
+        <div role="alert" className="alert alert-error alert-soft">
+          <AlertCircle size={18} />
+          <span className="flex-1">{replaceError}</span>
+          <button type="button" onClick={() => setReplaceError(null)} aria-label="Đóng" className="btn btn-ghost btn-circle btn-xs">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <section className="h-[80vh] pb-8">
-        <IframePreview url={publicUrl} title={preview.title} />
+        <IframePreview url={previewFileUrl(preview)} title={preview.title} />
       </section>
 
       {showDeleteConfirm && (

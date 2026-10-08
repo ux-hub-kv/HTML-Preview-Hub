@@ -5,7 +5,7 @@ import { ToastProvider } from './components/Toast';
 import BrowsePage from './pages/BrowsePage';
 import NewPreviewPage from './pages/NewPreviewPage';
 import PreviewViewPage from './pages/PreviewViewPage';
-import ReplacePage from './pages/ReplacePage';
+import FullPageViewPage from './pages/FullPageViewPage';
 import { purgeOldTrash } from './lib/folders';
 
 export default function App() {
@@ -22,7 +22,7 @@ export default function App() {
             <Route path="/folder/:folderId" element={<BrowsePage />} />
             <Route path="/new" element={<NewPreviewPage />} />
             <Route path="/preview/:id" element={<PreviewViewPage />} />
-            <Route path="/replace/:id" element={<ReplacePage />} />
+            <Route path="/view/:id" element={<FullPageViewPage />} />
           </Routes>
         </Layout>
       </ToastProvider>

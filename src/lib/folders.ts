@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { Folder, HtmlPreview } from '../types';
-import { EXPIRY_ENABLED, TRASH_RETENTION_DAYS } from './config';
+import { EXPIRY_ENABLED, MAX_UPLOAD_BYTES, TRASH_RETENTION_DAYS } from './config';
 
 export const AUTHOR_STORAGE_KEY = 'html-preview-hub-author';
 export const DRAG_MIME = 'application/x-preview-hub-item';
@@ -16,6 +16,36 @@ export function isExpired(preview: HtmlPreview, now = new Date()) {
 /** Shown in lists: not in the trash and not expired. */
 export function isVisible(preview: HtmlPreview, now = new Date()) {
   return !preview.deleted_at && !isExpired(preview, now);
+}
+
+/** Why a picked file can't be uploaded, or null when it is fine. */
+export function validateHtmlFile(file: File): string | null {
+  if (file.type !== 'text/html' && !/\.html?$/i.test(file.name)) return 'Chỉ hỗ trợ file .html. Hãy chọn file khác.';
+  if (file.size > MAX_UPLOAD_BYTES) return 'File lớn hơn 10MB. Hãy chọn file nhỏ hơn.';
+  return null;
+}
+
+/** Public URL of a preview's HTML, versioned so a replaced file is not served from cache. */
+export function previewFileUrl(preview: Pick<HtmlPreview, 'file_path' | 'updated_at'>) {
+  const { data } = supabase.storage.from('previews').getPublicUrl(preview.file_path);
+  return `${data.publicUrl}?v=${encodeURIComponent(preview.updated_at)}`;
+}
+
+export async function renamePreview(id: string, title: string) {
+  const { error } = await supabase.from('html_previews').update({ title: title.trim() }).eq('id', id);
+  if (error) throw error;
+}
+
+/** Overwrites the HTML at the same storage path (links stay the same) and bumps updated_at. */
+export async function replacePreviewFile(preview: Pick<HtmlPreview, 'id' | 'file_path'>, file: File) {
+  const { error: storageError } = await supabase.storage
+    .from('previews')
+    .upload(preview.file_path, file, { upsert: true, contentType: 'text/html' });
+  if (storageError) throw storageError;
+  const updatedAt = new Date().toISOString();
+  const { error } = await supabase.from('html_previews').update({ updated_at: updatedAt }).eq('id', preview.id);
+  if (error) throw error;
+  return updatedAt;
 }
 
 /** Event fired when previews change outside the page that shows them (e.g. undo from a toast). */

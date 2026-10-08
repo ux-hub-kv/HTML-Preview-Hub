@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, Upload, AlertCircle, FolderPlus, FolderOpen, FileCode2, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Search, Upload, AlertCircle, FolderPlus, FilePlus, FolderOpen, FileCode2, X } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { DragItem, Folder, HtmlPreview } from '../types';
@@ -11,6 +11,7 @@ import DeleteFolderDialog from '../components/DeleteFolderDialog';
 import { cn } from '../lib/utils';
 import { EXPIRY_ENABLED } from '../lib/config';
 import { useTrashPreview } from '../lib/useTrashPreview';
+import { useToast } from '../components/Toast';
 import {
   canMoveTo,
   createFolder,
@@ -25,6 +26,8 @@ import {
   isVisible,
   moveItem,
   renameFolder,
+  renamePreview,
+  validateHtmlFile,
 } from '../lib/folders';
 
 export default function BrowsePage() {
@@ -44,6 +47,8 @@ export default function BrowsePage() {
   const [deleteTarget, setDeleteTarget] = useState<Folder | null>(null);
   const navigate = useNavigate();
   const trashPreview = useTrashPreview();
+  const toast = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reload = useCallback(async () => {
     const [previewResult, folderResult] = await Promise.allSettled([
@@ -74,7 +79,6 @@ export default function BrowsePage() {
     setCreatingFolder(false);
     setSearch('');
     setError(null);
-    window.scrollTo(0, 0);
   }, [currentFolderId]);
 
   const now = new Date();
@@ -109,12 +113,9 @@ export default function BrowsePage() {
   // ---------- actions ----------
 
   const handleUpload = async (file: File) => {
-    if (file.type !== 'text/html' && !file.name.endsWith('.html')) {
-      setError('Chỉ hỗ trợ file .html. Hãy chọn file khác.');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setError('File lớn hơn 2MB. Hãy chọn file nhỏ hơn.');
+    const invalid = validateHtmlFile(file);
+    if (invalid) {
+      setError(invalid);
       return;
     }
     setError(null);
@@ -148,6 +149,10 @@ export default function BrowsePage() {
       if (dbError) throw dbError;
 
       navigate(`/preview/${dbData.id}`);
+      toast({
+        message: `Đã tải lên "${dbData.title}"`,
+        detail: currentFolder ? `File nằm trong folder "${currentFolder.name}". Bấm Copy link để chia sẻ.` : "Bấm Copy link để chia sẻ.",
+      });
     } catch (err: any) {
       setError(err.message || 'Đã có lỗi xảy ra. Hãy thử lại.');
       setUploading(false);
@@ -203,6 +208,11 @@ export default function BrowsePage() {
     }
     await renameFolder(folder.id, name);
     await reload();
+  };
+
+  const handleRenamePreview = async (id: string, title: string) => {
+    await renamePreview(id, title);
+    setPreviews((prev) => prev.map((p) => (p.id === id ? { ...p, title } : p)));
   };
 
   const handleMove = async (item: DragItem, targetId: string | null) => {
@@ -266,7 +276,7 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
       <header className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-content">
           <FileCode2 size={20} />
@@ -276,16 +286,6 @@ export default function BrowsePage() {
           <p className="text-sm text-base-content/60">Chia sẻ và xem nhanh các file HTML</p>
         </div>
       </header>
-
-      <div className="flex min-h-9 flex-wrap items-center">
-        {searching ? (
-          <p className="text-sm text-base-content/70">
-            Kết quả tìm kiếm cho <span className="font-medium text-base-content">"{search.trim()}"</span> trong tất cả folder
-          </p>
-        ) : (
-          <Breadcrumb path={path} canDropOn={canDropOn} onDropOn={dropOn} />
-        )}
-      </div>
 
       {!searching && (
         <div
@@ -320,14 +320,18 @@ export default function BrowsePage() {
                 Kéo thả file vào đây hoặc <span className="text-primary">chọn file</span>
               </p>
               <p className="mt-1 text-xs text-base-content/60">
-                Tải vào {currentFolder ? `folder "${currentFolder.name}"` : 'Home'} · Chỉ file .html, tối đa 2MB
+                {currentFolder && `Tải vào folder "${currentFolder.name}" · `}Chỉ file .html, tối đa 10MB
               </p>
             </div>
           )}
         </div>
       )}
 
-      {/* Toolbar for the listing below: search across all folders + create a folder here */}
+      {/* Title, toolbar, location and listing sit closer together than the rest of the page: they form one block */}
+      <section className="flex flex-col gap-3 pb-10">
+      <h2 className="text-xl font-semibold">Danh sách file</h2>
+
+      {/* Toolbar for the listing below: search across all folders + create a folder / add a file here */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="input w-full sm:w-80">
           <Search size={16} className="text-base-content/50" />
@@ -340,18 +344,53 @@ export default function BrowsePage() {
             onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
           />
         </label>
-        {!searching && !foldersUnavailable && (
-          <button
-            type="button"
-            onClick={() => setCreatingFolder(true)}
-            disabled={creatingFolder}
-            className="btn btn-primary"
-          >
-            <FolderPlus size={16} />
-            Folder mới
-          </button>
+        {!searching && (
+          <div className="flex flex-wrap gap-2">
+            {!foldersUnavailable && (
+              <button
+                type="button"
+                onClick={() => setCreatingFolder(true)}
+                disabled={creatingFolder}
+                className="btn btn-soft"
+              >
+                <FolderPlus size={16} />
+                Folder mới
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="btn btn-primary"
+            >
+              {uploading ? <span className="loading loading-spinner loading-xs" /> : <FilePlus size={16} />}
+              Thêm file
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".html"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (file) handleUpload(file);
+              }}
+            />
+          </div>
         )}
       </div>
+
+      {/* Where the listing below lives: search scope, or the folder path once inside a folder */}
+      {searching ? (
+        <p className="text-sm text-base-content/70">
+          Kết quả tìm kiếm cho <span className="font-medium text-base-content">"{search.trim()}"</span> trong tất cả folder
+        </p>
+      ) : (
+        currentFolder && (
+          <Breadcrumb path={path} canDropOn={canDropOn} onDropOn={dropOn} />
+        )
+      )}
 
       {foldersUnavailable && (
         <div role="alert" className="alert alert-warning alert-soft text-base-content">
@@ -369,7 +408,7 @@ export default function BrowsePage() {
         </div>
       )}
 
-      <div className="pb-10">
+      <div className="mt-1">
         {loading ? (
           <div className="flex h-48 items-center justify-center">
             <span className="loading loading-spinner loading-lg text-primary" />
@@ -394,7 +433,6 @@ export default function BrowsePage() {
           <div className="flex flex-col gap-8">
             {(shownFolders.length > 0 || creatingFolder) && (
               <section>
-                <h2 className="mb-3 text-sm font-semibold text-base-content/60">Folder</h2>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {creatingFolder && (
                     <NewFolderCard onSubmit={handleCreateFolder} onCancel={() => setCreatingFolder(false)} />
@@ -425,7 +463,6 @@ export default function BrowsePage() {
 
             {shownPreviews.length > 0 && (
               <section>
-                <h2 className="mb-3 text-sm font-semibold text-base-content/60">File</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {shownPreviews.map((preview) => (
                     <PreviewCard
@@ -433,6 +470,7 @@ export default function BrowsePage() {
                       preview={preview}
                       onDelete={handleDelete}
                       onMove={foldersUnavailable ? undefined : () => setMoveTarget({ type: 'file', id: preview.id })}
+                      onRename={(title) => handleRenamePreview(preview.id, title)}
                       pathLabel={searching ? pathLabelOf(preview.folder_id ?? null) : undefined}
                       isDragging={dragItem?.id === preview.id}
                       onDragStart={foldersUnavailable ? undefined : () => setDragItem({ type: 'file', id: preview.id })}
@@ -445,6 +483,7 @@ export default function BrowsePage() {
           </div>
         )}
       </div>
+      </section>
 
       {moveTarget && (
         <MoveDialog
