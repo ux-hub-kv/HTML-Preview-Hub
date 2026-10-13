@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Maximize2, Minimize2, Download, X } from 'lucide-react';
+import { withStorageShim } from '../lib/sandbox';
 
 interface IframePreviewProps {
   url: string;
@@ -8,6 +9,8 @@ interface IframePreviewProps {
 
 export default function IframePreview({ url, title }: IframePreviewProps) {
   const [srcDoc, setSrcDoc] = useState<string | null>(null);
+  // Rendered copy gets the storage shim; downloads keep the original file
+  const renderedDoc = useMemo(() => (srcDoc === null ? null : withStorageShim(srcDoc)), [srcDoc]);
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
@@ -71,7 +74,7 @@ export default function IframePreview({ url, title }: IframePreviewProps) {
         )}
         {srcDoc !== null && (
           <iframe
-            srcDoc={srcDoc}
+            srcDoc={renderedDoc ?? undefined}
             title={title}
             className="h-full w-full bg-white"
             sandbox="allow-scripts allow-forms"

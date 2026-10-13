@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { previewFileUrl } from '../lib/folders';
+import { withStorageShim } from '../lib/sandbox';
 
 type State =
   | { status: 'loading' }
@@ -34,7 +35,7 @@ export default function FullPageViewPage() {
         const res = await fetch(previewFileUrl(data));
         if (!res.ok) throw new Error(String(res.status));
         const html = await res.text();
-        if (!cancelled) setState({ status: 'ready', html, title: data.title });
+        if (!cancelled) setState({ status: 'ready', html: withStorageShim(html), title: data.title });
       } catch {
         if (!cancelled) setState({ status: 'error' });
       }
